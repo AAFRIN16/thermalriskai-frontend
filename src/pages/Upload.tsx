@@ -69,7 +69,7 @@ export default function Upload() {
     try {
       const formData = new FormData()
       formData.append('file', image)
-      const response = await axios.post('http://localhost:8000/analyze', formData, {
+      const response = await axios.post('https://ffrrin-thermalriskai.hf.space/analyze', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       setResult(response.data)
