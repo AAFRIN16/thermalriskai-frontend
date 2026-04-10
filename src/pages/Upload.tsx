@@ -6,7 +6,7 @@ import {
   PolarGrid, PolarAngleAxis, Radar
 } from 'recharts'
 
-const API_URL = 'http://localhost:8000'
+const API_URL = 'https://ffrrin-thermalriskai.hf.space'
 
 interface OrganResult {
   organ: string
