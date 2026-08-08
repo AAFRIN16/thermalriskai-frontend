@@ -18,12 +18,7 @@ import {
   RotateCcw,
   ShieldCheck,
   Cpu,
-  Calendar,
   Sparkles,
-  Watch,
-  BellRing,
-  Users,
-  CheckCircle2,
   ArrowRight,
   ChevronRight,
   TrendingDown,
@@ -37,13 +32,6 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useDigitalTwin } from '../context/DigitalTwinContext'
-
-const AI_INSIGHTS = [
-  'Baseline remains stable.',
-  'Left foot asymmetry reduced.',
-  'Recovery progressing.',
-  'No abnormal thermal drift detected.',
-]
 
 /* ==================== DIGITAL TWIN PAGE COMPONENT ==================== */
 
@@ -146,26 +134,6 @@ export default function DigitalTwin() {
       trend: scansProcessed > 0 ? `${scansProcessed} scans analyzed` : 'Routine tracking',
     },
   ]
-
-  // Future features preview cards
-  const futureFeatures = [
-    {
-      title: 'Wearable Integration',
-      desc: 'Continuous real-time thermal monitoring via smart footwear sensors and patch devices.',
-      icon: Watch,
-    },
-    {
-      title: 'Predictive Alerts',
-      desc: 'Proactive spatial-temporal risk notifications before clinical symptoms manifest.',
-      icon: BellRing,
-    },
-    {
-      title: 'Family Monitoring',
-      desc: 'Multi-profile dashboard allowing caregivers and family members to track wellness trajectories.',
-      icon: Users,
-    },
-  ]
-
   return (
     <div className="min-h-screen py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6 sm:space-y-10 overflow-x-hidden">
 
