@@ -1,12 +1,21 @@
 import { useState, useRef, useCallback } from 'react'
-import axios from 'axios'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, AreaChart, Area, RadarChart,
   PolarGrid, PolarAngleAxis, Radar
 } from 'recharts'
-
-const API_URL = 'https://ffrrin-thermalriskai.hf.space'
+import {
+  AlertTriangle,
+  Thermometer,
+  UploadCloud,
+  FileText,
+  Scale,
+  BarChart3,
+  Download,
+  Check
+} from 'lucide-react'
+import { uploadThermalScan } from '../services/api'
+import { useDigitalTwin } from '../context/DigitalTwinContext'
 
 interface OrganResult {
   organ: string
@@ -79,27 +88,27 @@ function getHeatColor(value: number): string {
 }
 
 function getNdviiColor(ndvii: number): string {
-  if (ndvii < 0.3) return '#22c55e'
-  if (ndvii < 0.55) return '#eab308'
-  if (ndvii < 0.75) return '#f97316'
-  return '#ef4444'
+  if (ndvii < 0.3) return '#16a34a'
+  if (ndvii < 0.55) return '#ca8a04'
+  if (ndvii < 0.75) return '#ea580c'
+  return '#dc2626'
 }
 
 function getStatusBadge(status: string) {
   const map: Record<string, string> = {
-    'Thermally Stable': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    'Mild Instability': 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-    'Moderate Instability': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-    'High Instability': 'bg-red-500/10 text-red-400 border-red-500/20',
-    'Optimal': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    'Normal': 'bg-green-500/10 text-green-400 border-green-500/20',
-    'Mild Variation': 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-    'Moderate Variation': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-    'Elevated Concern': 'bg-red-500/10 text-red-400 border-red-500/20',
-    'Stable': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    'Unstable': 'bg-red-500/10 text-red-400 border-red-500/20',
+    'Thermally Stable': 'bg-emerald-50 text-emerald-800 border-emerald-300',
+    'Mild Instability': 'bg-amber-50 text-amber-800 border-amber-300',
+    'Moderate Instability': 'bg-orange-50 text-orange-800 border-orange-300',
+    'High Instability': 'bg-red-50 text-red-800 border-red-300',
+    'Optimal': 'bg-emerald-50 text-emerald-800 border-emerald-300',
+    'Normal': 'bg-green-50 text-green-800 border-green-300',
+    'Mild Variation': 'bg-amber-50 text-amber-800 border-amber-300',
+    'Moderate Variation': 'bg-orange-50 text-orange-800 border-orange-300',
+    'Elevated Concern': 'bg-red-50 text-red-800 border-red-300',
+    'Stable': 'bg-emerald-50 text-emerald-800 border-emerald-300',
+    'Unstable': 'bg-red-50 text-red-800 border-red-300',
   }
-  return map[status] || 'bg-slate-500/10 text-slate-400 border-slate-500/20'
+  return map[status] || 'bg-slate-100 text-slate-800 border-slate-300'
 }
 
 const TABS = ['Overview', 'Thermal Map', 'Organ Analysis', 'PSE Embedding', 'Report']
@@ -126,23 +135,23 @@ function EmbeddingPlot({ result }: { result: AnalysisResult }) {
   const ny = scaleY(result.dataset_embedding.new_point[1])
 
   return (
-    <div className="relative bg-navy-950 rounded-xl overflow-hidden" style={{ height: 280 }}>
+    <div className="relative bg-slate-900 rounded-xl overflow-hidden shadow-inner" style={{ height: 280 }}>
       <svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
         {result.dataset_embedding.control.slice(0, 300).map((pt, i) => (
           <circle key={`c${i}`}
             cx={scaleX(pt[0])} cy={scaleY(pt[1])}
-            r={2.5} fill="#06b6d4" fillOpacity={0.5}
+            r={2.5} fill="#06b6d4" fillOpacity={0.6}
           />
         ))}
         {result.dataset_embedding.dm.slice(0, 300).map((pt, i) => (
           <circle key={`d${i}`}
             cx={scaleX(pt[0])} cy={scaleY(pt[1])}
-            r={2.5} fill="#ef4444" fillOpacity={0.5}
+            r={2.5} fill="#ef4444" fillOpacity={0.6}
           />
         ))}
-        <circle cx={nx} cy={ny} r={16} fill="none" stroke="#06b6d4" strokeWidth={1} strokeDasharray="4 3" opacity={0.4}/>
-        <circle cx={nx} cy={ny} r={7} fill="white" stroke="#06b6d4" strokeWidth={2}/>
-        <circle cx={nx} cy={ny} r={3} fill="#06b6d4"/>
+        <circle cx={nx} cy={ny} r={16} fill="none" stroke="#22d3ee" strokeWidth={1.5} strokeDasharray="4 3" opacity={0.8}/>
+        <circle cx={nx} cy={ny} r={7} fill="#ffffff" stroke="#0891b2" strokeWidth={2}/>
+        <circle cx={nx} cy={ny} r={3} fill="#0891b2"/>
       </svg>
     </div>
   )
@@ -158,6 +167,7 @@ export default function Upload() {
   const [activeTab, setActiveTab] = useState('Overview')
   const [showGradcam, setShowGradcam] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { refreshData } = useDigitalTwin()
 
   const handleFile = useCallback((file: File) => {
     setImage(file)
@@ -179,18 +189,16 @@ export default function Upload() {
     setLoading(true)
     setError(null)
     try {
-      const formData = new FormData()
-      formData.append('file', image)
-      const response = await axios.post(`${API_URL}/analyze`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
-      setResult(response.data)
+      const data = await uploadThermalScan(image)
+      setResult(data)
       setActiveTab('Overview')
+      // Immediately refresh Digital Twin & History data in background
+      refreshData().catch(err => console.error('Auto-refresh error after upload:', err))
     } catch (err: any) {
       if (err.response?.status === 422) {
         setError(`Invalid image: ${err.response.data.detail}`)
       } else {
-        setError('Analysis failed. Make sure the API server is running.')
+        setError(err.response?.data?.detail || 'Analysis failed. Make sure the API server is running.')
       }
     } finally {
       setLoading(false)
@@ -215,24 +223,24 @@ export default function Upload() {
   })) ?? []
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-6xl mx-auto px-6 py-10">
+    <div className="min-h-screen py-6 sm:py-10 overflow-x-hidden">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
 
         {/* Disclaimer */}
-        <div className="flex items-start gap-3 bg-amber-500/5 border border-amber-500/20 rounded-xl px-5 py-3 mb-8">
-          <span className="text-amber-400 text-lg flex-shrink-0">⚠️</span>
-          <p className="text-xs text-black-200/70 leading-relaxed">
-            <strong className="text-black-400">Research Platform — Non-Diagnostic:</strong> All outputs
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 sm:px-5 py-3 sm:py-3.5 mb-6 sm:mb-8 shadow-2xs">
+          <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-slate-700 leading-relaxed font-medium">
+            <strong className="text-slate-900 font-bold">Research Platform — Non-Diagnostic:</strong> All outputs
             are computational research indicators only. Not intended for medical diagnosis or clinical use.
             Upload feet or palm thermal infrared images only.
           </p>
         </div>
 
         {/* Header */}
-        <div className="mb-8">
-          <div className="text-xs text-cyan-500 font-mono uppercase tracking-widest mb-2">Analysis Module</div>
-          <h1 className="text-4xl font-black text-white tracking-tight">Thermal Analysis</h1>
-          <p className="text-slate-400 text-sm mt-2">
+        <div className="mb-6 sm:mb-8">
+          <div className="text-xs text-cyan-700 font-mono font-bold uppercase tracking-widest mb-1.5 sm:mb-2">Analysis Module</div>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Thermal Analysis</h1>
+          <p className="text-slate-600 text-xs sm:text-sm mt-1">
             Upload an infrared thermal image of feet or palm for comprehensive stability analysis
           </p>
         </div>
@@ -249,8 +257,8 @@ export default function Upload() {
               className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer
                 transition-all duration-200 min-h-[180px] flex flex-col items-center justify-center
                 ${dragging
-                  ? 'border-cyan-400 bg-cyan-500/5'
-                  : 'border-navy-600 hover:border-cyan-500/50 hover:bg-cyan-500/3 bg-navy-900/50'
+                  ? 'border-cyan-500 bg-cyan-50'
+                  : 'border-slate-300 hover:border-cyan-500 hover:bg-slate-50 bg-white shadow-2xs'
                 }`}
             >
               <input
@@ -260,17 +268,19 @@ export default function Upload() {
                 className="hidden"
                 onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
               />
-              <div className="text-3xl mb-3">🌡️</div>
-              <p className="font-semibold text-slate-300 text-sm mb-1">
+              <div className="w-12 h-12 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-700 flex items-center justify-center mb-3">
+                <UploadCloud className="w-6 h-6" />
+              </div>
+              <p className="font-bold text-slate-900 text-sm mb-1">
                 Drop thermal image here
               </p>
-              <p className="text-xs text-slate-500">Feet or palm infrared images only</p>
-              <p className="text-xs text-slate-600 mt-1">JPG · PNG supported</p>
+              <p className="text-xs text-slate-600 font-medium">Feet or palm infrared images only</p>
+              <p className="text-[11px] text-slate-500 font-mono mt-1">JPG · PNG supported</p>
             </div>
 
             {/* Preview */}
             {preview && (
-              <div className="card-glass rounded-xl overflow-hidden">
+              <div className="card-glass rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-white">
                 <div className="relative">
                   <img
                     src={showGradcam && result?.gradcam_image
@@ -282,9 +292,9 @@ export default function Upload() {
                   {result?.gradcam_image && (
                     <button
                       onClick={() => setShowGradcam(!showGradcam)}
-                      className="absolute bottom-2 right-2 text-[10px] px-2 py-1 rounded
-                        bg-navy-900/80 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-500/10
-                        transition-all font-mono"
+                      className="absolute bottom-2 right-2 text-[10px] px-2.5 py-1.5 rounded-lg
+                        bg-white text-cyan-700 border border-slate-200 hover:bg-slate-50
+                        transition-all font-mono font-bold shadow-xs"
                     >
                       {showGradcam ? '← Original' : 'Grad-CAM →'}
                     </button>
@@ -297,9 +307,9 @@ export default function Upload() {
             {image && !loading && (
               <button
                 onClick={handleAnalyze}
-                className="w-full bg-gradient-to-r from-cyan-500 to-blue-600
+                className="w-full bg-gradient-to-r from-cyan-600 to-blue-600
                   text-white font-bold py-3.5 rounded-xl transition-all duration-200
-                  hover:shadow-lg hover:shadow-cyan-500/20 hover:scale-[1.02]"
+                  hover:shadow-md hover:shadow-cyan-600/20 hover:scale-[1.01]"
               >
                 Run Thermal Analysis
               </button>
@@ -307,15 +317,15 @@ export default function Upload() {
 
             {/* Loading */}
             {loading && (
-              <div className="card-glass rounded-xl p-6 text-center">
+              <div className="card-glass rounded-xl p-6 text-center bg-white border border-slate-200">
                 <div className="flex items-center justify-center gap-3 mb-3">
-                  <div className="w-5 h-5 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin"/>
-                  <span className="text-cyan-400 text-sm font-mono">Analyzing...</span>
+                  <div className="w-5 h-5 border-2 border-cyan-600 border-t-transparent rounded-full animate-spin"/>
+                  <span className="text-cyan-700 text-sm font-mono font-bold">Analyzing...</span>
                 </div>
                 <div className="space-y-1.5">
                   {['Feature extraction', 'PSE embedding', 'Organ mapping', 'NDVII computation'].map((s, i) => (
-                    <div key={s} className="flex items-center gap-2 text-xs text-slate-500">
-                      <div className="w-1 h-1 rounded-full bg-cyan-500 animate-pulse" style={{animationDelay: `${i*0.2}s`}}/>
+                    <div key={s} className="flex items-center gap-2 text-xs text-slate-600 font-medium">
+                      <div className="w-1.5 h-1.5 rounded-full bg-cyan-600 animate-pulse" style={{animationDelay: `${i*0.2}s`}}/>
                       {s}
                     </div>
                   ))}
@@ -325,36 +335,36 @@ export default function Upload() {
 
             {/* Error */}
             {error && (
-              <div className="flex items-start gap-3 bg-red-500/5 border border-red-500/20 rounded-xl px-4 py-3">
-                <span className="text-red-400 text-lg flex-shrink-0">✕</span>
-                <p className="text-red-400 text-xs leading-relaxed">{error}</p>
+              <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                <span className="text-red-600 text-base flex-shrink-0">✕</span>
+                <p className="text-red-700 text-xs leading-relaxed font-semibold">{error}</p>
               </div>
             )}
 
             {/* Quick metrics */}
             {result && (
               <div className="grid grid-cols-2 gap-3">
-                <div className="card-glass rounded-xl p-3 text-center">
+                <div className="card-glass rounded-xl p-3 text-center bg-white border border-slate-200">
                   <div className="text-2xl font-black font-mono" style={{color: getNdviiColor(result.ndvii)}}>
                     {result.ndvii.toFixed(3)}
                   </div>
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider mt-1">NDVII</div>
+                  <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-1">NDVII</div>
                 </div>
-                <div className="card-glass rounded-xl p-3 text-center">
-                  <div className="text-2xl font-black text-black font-mono">
+                <div className="card-glass rounded-xl p-3 text-center bg-white border border-slate-200">
+                  <div className="text-2xl font-black text-slate-900 font-mono">
                     {Math.round(result.stability_score)}
                   </div>
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider mt-1">Stability /100</div>
+                  <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-1">Stability /100</div>
                 </div>
-                <div className="card-glass rounded-xl p-3 text-center">
-                  <div className="text-lg font-bold text-black font-mono">{result.confidence}%</div>
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider mt-1">Confidence</div>
+                <div className="card-glass rounded-xl p-3 text-center bg-white border border-slate-200">
+                  <div className="text-lg font-bold text-slate-900 font-mono">{result.confidence}%</div>
+                  <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-1">Confidence</div>
                 </div>
-                <div className="card-glass rounded-xl p-3 text-center">
-                  <div className="text-lg font-bold text-black font-mono">
+                <div className="card-glass rounded-xl p-3 text-center bg-white border border-slate-200">
+                  <div className="text-lg font-bold text-slate-900 font-mono">
                     {result.organ_mapping?.overall_health_score ?? '—'}
                   </div>
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider mt-1">Health Score</div>
+                  <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-1">Health Score</div>
                 </div>
               </div>
             )}
@@ -364,15 +374,15 @@ export default function Upload() {
           {result && (
             <div className="lg:col-span-3 flex flex-col gap-4">
               {/* Tabs */}
-              <div className="flex gap-1 bg-navy-900/50 p-1 rounded-xl border border-navy-700/50 overflow-x-auto">
+              <div className="flex gap-1.5 bg-slate-200/70 p-1.5 rounded-xl border border-slate-300/60 overflow-x-auto">
                 {TABS.map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200
+                    className={`flex-shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200
                       ${activeTab === tab
-                        ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
-                        : 'text-slate-400 hover:text-white'
+                        ? 'bg-white text-cyan-800 shadow-xs border border-slate-200'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                       }`}
                   >
                     {tab}
@@ -382,73 +392,79 @@ export default function Upload() {
 
               {/* ── OVERVIEW TAB ── */}
               {activeTab === 'Overview' && (
-                <div className="flex flex-col gap-4 fade-in-up">
+                <div className="flex flex-col gap-4">
                   {/* Status banner */}
-                  <div className={`rounded-xl p-4 border ${getStatusBadge(result.stability_label)}`}>
+                  <div className={`rounded-xl p-4 border shadow-2xs ${getStatusBadge(result.stability_label)}`}>
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-xs uppercase tracking-widest opacity-70 mb-1">Stability Assessment</div>
-                        <div className="text-xl font-bold">{result.stability_label}</div>
+                        <div className="text-[10px] uppercase tracking-widest font-mono font-bold opacity-80 mb-1">Stability Assessment</div>
+                        <div className="text-xl font-black">{result.stability_label}</div>
                       </div>
                       <div className="text-right">
-                        <div className="text-xs opacity-70 mb-1">Predicted</div>
-                        <div className="font-semibold text-sm">{result.predicted_class}</div>
+                        <div className="text-[10px] uppercase tracking-widest font-mono font-bold opacity-80 mb-1">Predicted Class</div>
+                        <div className="font-bold text-sm font-mono">{result.predicted_class}</div>
                       </div>
                     </div>
                   </div>
 
                   {/* 3 stat cards */}
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="card-glass rounded-xl p-3">
-                      <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">🌡️ Mean Temp</div>
-                      <div className="text-lg font-bold text-white font-mono">{result.stats.mean_temp}°C</div>
-                      <div className="text-[10px] text-slate-600">±{result.stats.std_temp}°C std</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="card-glass rounded-xl p-3 bg-white border border-slate-200">
+                      <div className="flex items-center gap-1 text-[10px] text-slate-600 font-bold uppercase tracking-wider mb-1">
+                        <Thermometer className="w-3 h-3 text-cyan-700" /> Mean Temp
+                      </div>
+                      <div className="text-lg font-bold text-slate-900 font-mono">{result.stats.mean_temp}°C</div>
+                      <div className="text-[10px] text-slate-500 font-mono">±{result.stats.std_temp}°C std</div>
                     </div>
-                    <div className="card-glass rounded-xl p-3">
-                      <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">⚖️ Bilateral Δ</div>
-                      <div className="text-lg font-bold text-white font-mono">{result.stats.bilateral_differential}°C</div>
-                      <div className="text-[10px] text-slate-600">L/R differential</div>
+                    <div className="card-glass rounded-xl p-3 bg-white border border-slate-200">
+                      <div className="flex items-center gap-1 text-[10px] text-slate-600 font-bold uppercase tracking-wider mb-1">
+                        <Scale className="w-3 h-3 text-cyan-700" /> Bilateral Δ
+                      </div>
+                      <div className="text-lg font-bold text-slate-900 font-mono">{result.stats.bilateral_differential}°C</div>
+                      <div className="text-[10px] text-slate-500 font-mono">L/R differential</div>
                     </div>
-                    <div className="card-glass rounded-xl p-3">
-                      <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">📊 Drift</div>
-                      <div className={`text-lg font-bold font-mono ${result.drift_indicator === 'Stable' ? 'text-emerald-400' : 'text-red-400'}`}>
+                    <div className="card-glass rounded-xl p-3 bg-white border border-slate-200">
+                      <div className="flex items-center gap-1 text-[10px] text-slate-600 font-bold uppercase tracking-wider mb-1">
+                        <BarChart3 className="w-3 h-3 text-cyan-700" /> Drift
+                      </div>
+                      <div className={`text-lg font-bold font-mono ${result.drift_indicator === 'Stable' ? 'text-emerald-700' : 'text-red-700'}`}>
                         {result.drift_indicator}
                       </div>
-                      <div className="text-[10px] text-slate-600">Indicator</div>
+                      <div className="text-[10px] text-slate-500 font-mono">Indicator</div>
                     </div>
                   </div>
 
                   {/* Charts */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="card-glass rounded-xl p-4">
-                      <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-3">Stability Over Time</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="card-glass rounded-xl p-4 bg-white border border-slate-200">
+                      <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mb-3">Stability Over Time</div>
                       <ResponsiveContainer width="100%" height={120}>
                         <LineChart data={stabilityData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#1e2d47"/>
-                          <XAxis dataKey="t" tick={{fontSize: 9, fill: '#475569'}}/>
-                          <YAxis domain={[0, 100]} tick={{fontSize: 9, fill: '#475569'}}/>
-                          <Tooltip contentStyle={{background: '#0f172a', border: '1px solid #1e3a5f', fontSize: 11, borderRadius: 8}}/>
-                          <Line type="monotone" dataKey="v" stroke="#06b6d4" strokeWidth={2} dot={false}/>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0"/>
+                          <XAxis dataKey="t" tick={{fontSize: 9, fill: '#64748b'}}/>
+                          <YAxis domain={[0, 100]} tick={{fontSize: 9, fill: '#64748b'}}/>
+                          <Tooltip contentStyle={{background: '#ffffff', border: '1px solid #cbd5e1', fontSize: 11, borderRadius: 8, color: '#0f172a'}}/>
+                          <Line type="monotone" dataKey="v" stroke="#0891b2" strokeWidth={2} dot={false}/>
                         </LineChart>
                       </ResponsiveContainer>
                     </div>
-                    <div className="card-glass rounded-xl p-4">
-                      <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-3">Drift Progression</div>
+                    <div className="card-glass rounded-xl p-4 bg-white border border-slate-200">
+                      <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mb-3">Drift Progression</div>
                       <ResponsiveContainer width="100%" height={120}>
                         <AreaChart data={driftData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#1e2d47"/>
-                          <XAxis dataKey="t" tick={{fontSize: 9, fill: '#475569'}}/>
-                          <YAxis domain={[0, 2.5]} tick={{fontSize: 9, fill: '#475569'}}/>
-                          <Tooltip contentStyle={{background: '#0f172a', border: '1px solid #1e3a5f', fontSize: 11, borderRadius: 8}}/>
-                          <Area type="monotone" dataKey="v" stroke="#3b82f6" fill="#1e3a5f" strokeWidth={2}/>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0"/>
+                          <XAxis dataKey="t" tick={{fontSize: 9, fill: '#64748b'}}/>
+                          <YAxis domain={[0, 2.5]} tick={{fontSize: 9, fill: '#64748b'}}/>
+                          <Tooltip contentStyle={{background: '#ffffff', border: '1px solid #cbd5e1', fontSize: 11, borderRadius: 8, color: '#0f172a'}}/>
+                          <Area type="monotone" dataKey="v" stroke="#2563eb" fill="#dbeafe" strokeWidth={2}/>
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
                   </div>
 
                   {/* Session info */}
-                  <div className="card-glass rounded-xl p-4">
-                    <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-3 font-mono">Session Metadata</div>
+                  <div className="card-glass rounded-xl p-4 bg-white border border-slate-200">
+                    <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mb-3 font-mono">Session Metadata</div>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       {[
                         ['Session ID', result.session_id],
@@ -458,8 +474,8 @@ export default function Upload() {
                         ['Instability Index', result.instability_index.toFixed(4)],
                       ].map(([k, v]) => (
                         <div key={k} className="flex justify-between gap-2">
-                          <span className="text-slate-500">{k}</span>
-                          <span className="text-slate-300 font-mono">{v}</span>
+                          <span className="text-slate-600 font-medium">{k}</span>
+                          <span className="text-slate-900 font-mono font-bold">{v}</span>
                         </div>
                       ))}
                     </div>
@@ -469,50 +485,50 @@ export default function Upload() {
 
               {/* ── THERMAL MAP TAB ── */}
               {activeTab === 'Thermal Map' && (
-                <div className="flex flex-col gap-4 fade-in-up">
+                <div className="flex flex-col gap-4">
                   {/* Heatmap grid */}
-                  <div className="card-glass rounded-xl p-5">
-                    <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-4">Feature Heatmap Overlay</div>
+                  <div className="card-glass rounded-xl p-5 bg-white border border-slate-200">
+                    <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mb-4">Feature Heatmap Overlay</div>
                     <div className="grid gap-1.5" style={{gridTemplateColumns: 'repeat(8, 1fr)'}}>
                       {result.heatmap_grid.flat().map((val, i) => (
                         <div
                           key={i}
-                          className="rounded aspect-square transition-all"
+                          className="rounded aspect-square transition-all border border-slate-200/50"
                           style={{backgroundColor: getHeatColor(val)}}
                           title={`Zone ${i}: ${val.toFixed(3)}`}
                         />
                       ))}
                     </div>
                     <div className="flex items-center gap-2 mt-4">
-                      <span className="text-[10px] text-slate-600">Low</span>
-                      <div className="flex-1 h-1.5 rounded-full" style={{
+                      <span className="text-[10px] text-slate-600 font-bold">Low Heat</span>
+                      <div className="flex-1 h-2 rounded-full" style={{
                         background: 'linear-gradient(90deg, #1e3a5f, #1d4ed8, #0891b2, #059669, #d97706, #dc2626, #7c3aed)'
                       }}/>
-                      <span className="text-[10px] text-slate-600">High</span>
+                      <span className="text-[10px] text-slate-600 font-bold">High Heat</span>
                     </div>
                   </div>
 
                   {/* Grad-CAM */}
                   {result.gradcam_image && (
-                    <div className="card-glass rounded-xl p-5">
-                      <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-4">
+                    <div className="card-glass rounded-xl p-5 bg-white border border-slate-200">
+                      <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mb-4">
                         Grad-CAM — AI Attention Map
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <div className="text-[10px] text-slate-600 mb-2">Original</div>
-                          <img src={preview!} alt="Original" className="w-full rounded-lg object-contain max-h-48"/>
+                          <div className="text-[10px] text-slate-600 font-bold mb-2">Original</div>
+                          <img src={preview!} alt="Original" className="w-full rounded-lg object-contain max-h-48 border border-slate-200"/>
                         </div>
                         <div>
-                          <div className="text-[10px] text-slate-600 mb-2">AI Focus Regions</div>
+                          <div className="text-[10px] text-slate-600 font-bold mb-2">AI Focus Regions</div>
                           <img
                             src={`data:image/png;base64,${result.gradcam_image}`}
                             alt="Grad-CAM"
-                            className="w-full rounded-lg object-contain max-h-48"
+                            className="w-full rounded-lg object-contain max-h-48 border border-slate-200"
                           />
                         </div>
                       </div>
-                      <p className="text-[10px] text-slate-500 mt-3 leading-relaxed">
+                      <p className="text-[11px] text-slate-600 mt-3 leading-relaxed">
                         Grad-CAM highlights regions the model weighted most heavily during classification.
                         Warmer colors indicate higher attention concentration.
                       </p>
@@ -523,28 +539,28 @@ export default function Upload() {
 
               {/* ── ORGAN ANALYSIS TAB ── */}
               {activeTab === 'Organ Analysis' && result.organ_mapping && (
-                <div className="flex flex-col gap-4 fade-in-up">
+                <div className="flex flex-col gap-4">
                   {/* Disclaimer */}
-                  <div className="bg-red-500/5 border border-red-500/20 rounded-xl px-4 py-3">
-                    <p className="text-[10px] text-red-300/70 leading-relaxed">
-                      ⚠️ <strong className="text-red-400">Non-Diagnostic Research Indicator:</strong> Organ zone assessments
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                    <p className="text-[11px] text-slate-700 leading-relaxed font-medium">
+                      <strong className="text-amber-800 font-bold">Non-Diagnostic Research Indicator:</strong> Organ zone assessments
                       are computational estimates based on thermal surface patterns and reflexology zone mapping.
                       These are NOT medical diagnoses. Consult a healthcare professional for any health concerns.
                     </p>
                   </div>
 
                   {/* Overall score */}
-                  <div className="card-glass rounded-xl p-5">
+                  <div className="card-glass rounded-xl p-5 bg-white border border-slate-200">
                     <div className="mb-4">
-                      <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Overall Thermal Health Score</div>
-                      <div className="text-4xl font-black text-black font-mono">
+                      <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mb-1">Overall Thermal Health Score</div>
+                      <div className="text-4xl font-black text-slate-900 font-mono">
                         {result.organ_mapping.overall_health_score}
-                        <span className="text-xl text-slate-500">/100</span>
+                        <span className="text-xl text-slate-500 font-normal">/100</span>
                       </div>
                     </div>
-                    <div className="w-full bg-navy-800 rounded-full h-2">
+                    <div className="w-full bg-slate-100 rounded-full h-2.5">
                       <div
-                        className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 transition-all"
+                        className="h-2.5 rounded-full bg-gradient-to-r from-cyan-600 to-blue-600 transition-all"
                         style={{width: `${result.organ_mapping.overall_health_score}%`}}
                       />
                     </div>
@@ -552,48 +568,48 @@ export default function Upload() {
 
                   {/* Radar chart */}
                   {radarData.length > 0 && (
-                    <div className="card-glass rounded-xl p-5">
-                      <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-3">System Health Radar</div>
+                    <div className="card-glass rounded-xl p-5 bg-white border border-slate-200">
+                      <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mb-3">System Health Radar</div>
                       <ResponsiveContainer width="100%" height={220}>
                         <RadarChart data={radarData}>
-                          <PolarGrid stroke="#1e3a5f"/>
+                          <PolarGrid stroke="#cbd5e1"/>
                           <PolarAngleAxis dataKey="subject" tick={{fontSize: 9, fill: '#475569'}}/>
-                          <Radar name="Health" dataKey="value" stroke="#06b6d4" fill="#06b6d4" fillOpacity={0.15} strokeWidth={2}/>
-                          <Tooltip contentStyle={{background: '#0f172a', border: '1px solid #1e3a5f', fontSize: 11, borderRadius: 8}}/>
+                          <Radar name="Health" dataKey="value" stroke="#0891b2" fill="#0891b2" fillOpacity={0.2} strokeWidth={2}/>
+                          <Tooltip contentStyle={{background: '#ffffff', border: '1px solid #cbd5e1', fontSize: 11, borderRadius: 8, color: '#0f172a'}}/>
                         </RadarChart>
                       </ResponsiveContainer>
                     </div>
                   )}
 
                   {/* Organ table */}
-                  <div className="card-glass rounded-xl overflow-hidden">
-                    <div className="px-4 py-3 border-b border-navy-700/50">
-                      <div className="text-[10px] text-slate-500 uppercase tracking-wider">Organ Zone Thermal Analysis</div>
+                  <div className="card-glass rounded-xl overflow-hidden bg-white border border-slate-200">
+                    <div className="px-4 py-3 border-b border-slate-200">
+                      <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider">Organ Zone Thermal Analysis</div>
                     </div>
-                    <div className="divide-y divide-navy-700/30">
+                    <div className="divide-y divide-slate-100">
                       {result.organ_mapping.organs.map((organ) => (
-                        <div key={organ.organ} className="px-4 py-3 hover:bg-cyan-500/3 transition-all">
+                        <div key={organ.organ} className="px-4 py-3 hover:bg-slate-50 transition-all">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="text-xs font-semibold text-black">{organ.description}</span>
-                                <span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-mono uppercase ${getStatusBadge(organ.status)}`}>
+                                <span className="text-xs font-bold text-slate-900">{organ.description}</span>
+                                <span className={`text-[9px] px-2 py-0.5 rounded-full border font-mono font-bold uppercase ${getStatusBadge(organ.status)}`}>
                                   {organ.status}
                                 </span>
                               </div>
-                              <div className="text-[10px] text-slate-500 mb-1">{organ.zone}</div>
+                              <div className="text-[10px] text-slate-500 mb-1 font-medium">{organ.zone}</div>
                               <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-1">
-                                  <span className="text-[9px] text-slate-600">Perfusion</span>
-                                  <div className="w-16 h-1 bg-navy-800 rounded-full overflow-hidden">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] text-slate-600 font-medium">Perfusion</span>
+                                  <div className="w-20 h-1.5 bg-slate-200 rounded-full overflow-hidden">
                                     <div
-                                      className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500"
+                                      className="h-full rounded-full bg-gradient-to-r from-cyan-600 to-blue-600"
                                       style={{width: `${organ.perfusion_level}%`}}
                                     />
                                   </div>
-                                  <span className="text-[9px] text-cyan-400 font-mono">{organ.perfusion_level}%</span>
+                                  <span className="text-[10px] text-cyan-800 font-mono font-bold">{organ.perfusion_level}%</span>
                                 </div>
-                                <div className="text-[9px] font-mono" style={{color: organ.thermal_variation >= 0 ? '#f97316' : '#22c55e'}}>
+                                <div className="text-[10px] font-mono font-bold" style={{color: organ.thermal_variation >= 0 ? '#ea580c' : '#16a34a'}}>
                                   Δ {organ.thermal_variation >= 0 ? '+' : ''}{organ.thermal_variation}°C
                                 </div>
                               </div>
@@ -608,34 +624,34 @@ export default function Upload() {
 
               {/* ── PSE EMBEDDING TAB ── */}
               {activeTab === 'PSE Embedding' && (
-                <div className="flex flex-col gap-4 fade-in-up">
-                  <div className="card-glass rounded-xl p-5">
-                    <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-4">
+                <div className="flex flex-col gap-4">
+                  <div className="card-glass rounded-xl p-5 bg-white border border-slate-200">
+                    <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mb-4">
                       Perfusion Stability Embedding Space
                     </div>
                     <EmbeddingPlot result={result} />
                     <div className="flex items-center gap-6 mt-4">
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-cyan-500 opacity-60"/>
-                        <span className="text-[10px] text-slate-400">Control Group</span>
+                        <div className="w-3 h-3 rounded-full bg-cyan-500"/>
+                        <span className="text-[10px] text-slate-700 font-bold">Control Group</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-red-500 opacity-60"/>
-                        <span className="text-[10px] text-slate-400">DM Group</span>
+                        <div className="w-3 h-3 rounded-full bg-red-500"/>
+                        <span className="text-[10px] text-slate-700 font-bold">DM Group</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-black"/>
-                        <span className="text-[10px] text-slate-400">Your Image</span>
+                        <div className="w-3 h-3 rounded-full bg-white border-2 border-cyan-600"/>
+                        <span className="text-[10px] text-slate-900 font-bold">Your Image</span>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3 mt-4 text-xs">
-                      <div className="bg-navy-800/50 rounded-lg p-2">
-                        <span className="text-slate-500">UMAP-1: </span>
-                        <span className="text-cyan-400 font-mono">{result.embedding.x.toFixed(4)}</span>
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
+                        <span className="text-slate-600 font-medium">UMAP-1: </span>
+                        <span className="text-cyan-800 font-mono font-bold">{result.embedding.x.toFixed(4)}</span>
                       </div>
-                      <div className="bg-navy-800/50 rounded-lg p-2">
-                        <span className="text-slate-500">UMAP-2: </span>
-                        <span className="text-cyan-400 font-mono">{result.embedding.y.toFixed(4)}</span>
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
+                        <span className="text-slate-600 font-medium">UMAP-2: </span>
+                        <span className="text-cyan-800 font-mono font-bold">{result.embedding.y.toFixed(4)}</span>
                       </div>
                     </div>
                   </div>
@@ -644,57 +660,55 @@ export default function Upload() {
 
               {/* ── REPORT TAB ── */}
               {activeTab === 'Report' && (
-                <div className="flex flex-col gap-4 fade-in-up">
-                  <div className="card-glass rounded-xl p-6 text-center">
-                    <div className="text-4xl mb-4">📄</div>
-                    <div className="font-bold text-black text-lg mb-2">Research Report Ready</div>
-                    <div className="text-slate-400 text-sm mb-2">Session: <span className="font-mono text-cyan-400">{result.session_id}</span></div>
-                    <div className="text-xs text-slate-500 mb-6 leading-relaxed max-w-sm mx-auto">
+                <div className="flex flex-col gap-4">
+                  <div className="card-glass rounded-xl p-6 text-center bg-white border border-slate-200">
+                    <div className="w-12 h-12 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-700 flex items-center justify-center mx-auto mb-3">
+                      <FileText className="w-6 h-6" />
+                    </div>
+                    <div className="font-bold text-slate-900 text-lg mb-1">Research Report Ready</div>
+                    <div className="text-slate-600 text-sm mb-2">Session: <span className="font-mono text-cyan-700 font-bold">{result.session_id}</span></div>
+                    <div className="text-xs text-slate-600 mb-6 leading-relaxed max-w-sm mx-auto font-medium">
                       Comprehensive PDF report including all thermal analysis metrics,
                       organ zone assessments, PSE embedding coordinates, and NDVII scores.
                     </div>
                     <button
                       onClick={downloadPDF}
-                      className="flex items-center gap-2 mx-auto bg-gradient-to-r from-cyan-500 to-blue-600
-                        text-white font-semibold px-6 py-3 rounded-xl hover:shadow-lg
-                        hover:shadow-cyan-500/20 transition-all"
+                      className="flex items-center gap-2 mx-auto bg-gradient-to-r from-cyan-600 to-blue-600
+                        text-white font-semibold px-6 py-3 rounded-xl hover:shadow-md
+                        hover:shadow-cyan-600/20 transition-all"
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="7 10 12 15 17 10"/>
-                        <line x1="12" y1="15" x2="12" y2="3"/>
-                      </svg>
+                      <Download className="w-4 h-4" />
                       Download PDF Report
                     </button>
                   </div>
 
                   {/* Report preview */}
-                  <div className="card-glass rounded-xl p-5">
-                    <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-4">Report Contents</div>
+                  <div className="card-glass rounded-xl p-5 bg-white border border-slate-200">
+                    <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mb-4">Report Contents</div>
                     <div className="space-y-2">
                       {[
-                        '✓ Session metadata & timestamp',
-                        '✓ Core NDVII metrics & stability classification',
-                        '✓ Temperature distribution statistics',
-                        '✓ Bilateral symmetry differential',
-                        '✓ Organ zone thermal analysis (8 systems)',
-                        '✓ System-level health summary',
-                        '✓ Perfusion levels per zone',
-                        '✓ Thermal variation signatures',
-                        '✓ PSE embedding coordinates',
-                        '✓ Research disclaimer & limitations',
+                        'Session metadata & timestamp',
+                        'Core NDVII metrics & stability classification',
+                        'Temperature distribution statistics',
+                        'Bilateral symmetry differential',
+                        'Organ zone thermal analysis (8 systems)',
+                        'System-level health summary',
+                        'Perfusion levels per zone',
+                        'Thermal variation signatures',
+                        'PSE embedding coordinates',
+                        'Research disclaimer & limitations',
                       ].map(item => (
-                        <div key={item} className="text-xs text-slate-400 flex items-center gap-2">
-                          <span className="text-emerald-400">{item.split(' ')[0]}</span>
-                          <span>{item.split(' ').slice(1).join(' ')}</span>
+                        <div key={item} className="text-xs text-slate-700 flex items-center gap-2 font-medium">
+                          <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                          <span>{item}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4">
-                    <p className="text-[10px] text-red-300/70 leading-relaxed">
-                      ⚠️ This report is for research purposes only. All findings are computational
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                    <p className="text-xs text-red-700 leading-relaxed font-medium">
+                      This report is for research purposes only. All findings are computational
                       indicators and do not constitute medical diagnoses or clinical recommendations.
                     </p>
                   </div>

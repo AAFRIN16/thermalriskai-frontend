@@ -1,12 +1,29 @@
 import { useNavigate } from 'react-router-dom'
+import {
+  Camera,
+  Settings,
+  Brain,
+  Microscope,
+  BarChart3,
+  HeartPulse,
+  Thermometer,
+  Scale,
+  TrendingUp,
+  FileText,
+  Lock,
+  AlertTriangle,
+  ArrowRight,
+  ChevronRight,
+  Sparkles,
+} from 'lucide-react'
 
 const pipeline = [
-  { step: '01', label: 'Infrared Input', desc: 'Thermal image ingestion & validation', icon: '📷' },
-  { step: '02', label: 'Preprocessing', desc: 'Noise reduction & normalization', icon: '⚙️' },
-  { step: '03', label: 'CNN Extraction', desc: 'EfficientNet-B0 feature vectors', icon: '🧠' },
-  { step: '04', label: 'PSE Embedding', desc: 'UMAP stability manifold', icon: '🔬' },
-  { step: '05', label: 'NDVII Score', desc: 'Instability indicator generation', icon: '📊' },
-  { step: '06', label: 'Organ Mapping', desc: 'Zone-based health analysis', icon: '🫀' },
+  { step: '01', label: 'Infrared Input', desc: 'Thermal image ingestion & validation', icon: Camera },
+  { step: '02', label: 'Preprocessing', desc: 'Noise reduction & normalization', icon: Settings },
+  { step: '03', label: 'CNN Extraction', desc: 'EfficientNet-B0 feature vectors', icon: Brain },
+  { step: '04', label: 'PSE Embedding', desc: 'UMAP stability manifold', icon: Microscope },
+  { step: '05', label: 'NDVII Score', desc: 'Instability indicator generation', icon: BarChart3 },
+  { step: '06', label: 'Organ Mapping', desc: 'Zone-based health analysis', icon: HeartPulse },
 ]
 
 const stats = [
@@ -18,32 +35,32 @@ const stats = [
 
 const features = [
   {
-    icon: '🌡️',
+    icon: Thermometer,
     title: 'Grad-CAM Visualization',
     desc: 'AI attention heatmaps showing exact thermal regions influencing the analysis'
   },
   {
-    icon: '🫀',
+    icon: HeartPulse,
     title: 'Organ Zone Mapping',
     desc: 'Reflexology-based thermal zone analysis mapping to 8 major organ systems'
   },
   {
-    icon: '📐',
+    icon: Scale,
     title: 'Bilateral Symmetry',
     desc: 'Left-right thermal differential analysis for asymmetry detection'
   },
   {
-    icon: '📈',
+    icon: TrendingUp,
     title: 'Perfusion Scoring',
     desc: 'Per-zone vascular perfusion level quantification'
   },
   {
-    icon: '📄',
+    icon: FileText,
     title: 'PDF Reports',
     desc: 'Downloadable comprehensive research reports with all metrics'
   },
   {
-    icon: '🔒',
+    icon: Lock,
     title: 'Deterministic Output',
     desc: 'Same image always produces identical results for reproducible research'
   },
@@ -53,50 +70,49 @@ export default function Home() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 via-transparent to-transparent"/>
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-cyan-500/5 rounded-full blur-3xl"/>
+      <section className="relative overflow-hidden py-16 sm:py-24 border-b border-slate-200/80 bg-white">
+        <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 via-slate-50/50 to-transparent" />
+        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[300px] sm:w-[600px] h-[200px] sm:h-[300px] bg-cyan-400/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative max-w-5xl mx-auto px-6 py-28 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-8">
-            <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"/>
-            <span className="text-xs text-cyan-400 font-mono uppercase tracking-widest">AI Healthcare Research Platform</span>
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 text-center">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-50 border border-cyan-200 mb-6 sm:mb-8 shadow-xs">
+            <Sparkles className="w-3.5 h-3.5 text-cyan-600 animate-pulse flex-shrink-0" />
+            <span className="text-[11px] sm:text-xs text-cyan-700 font-mono uppercase tracking-widest font-bold">
+              AI Healthcare Research Platform
+            </span>
           </div>
 
-          <h1 className="text-6xl md:text-7xl font-black text-black mb-4 tracking-tight leading-none">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 mb-4 sm:mb-6 tracking-tight leading-tight">
             Thermal<span className="gradient-text">RiskAI</span>
           </h1>
 
-          <p className="text-xl text-cyan-400 font-medium mb-4">
+          <p className="text-base sm:text-xl text-cyan-700 font-semibold mb-4 sm:mb-6 max-w-3xl mx-auto">
             AI-Based Spatial–Temporal Thermal Stability Analysis
           </p>
 
-          <p className="max-w-2xl mx-auto text-slate-400 text-base leading-relaxed mb-10">
+          <p className="max-w-2xl mx-auto text-slate-600 text-sm sm:text-base md:text-lg leading-relaxed mb-8 sm:mb-10 font-normal">
             Advanced computational platform analyzing infrared thermal images of feet and palms
             to model perfusion-related heat patterns, organ zone thermal signatures, and
             vascular stability through deep learning and spatial-temporal modeling.
           </p>
 
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
             <button
               onClick={() => navigate('/upload')}
-              className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-blue-600
-                text-white font-semibold px-8 py-3.5 rounded-xl shadow-lg
-                hover:shadow-cyan-500/25 transition-all duration-200 hover:scale-105"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600
+                text-white font-semibold px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl shadow-md shadow-cyan-600/20
+                hover:shadow-lg hover:shadow-cyan-600/30 transition-all duration-200 hover:-translate-y-0.5 text-sm sm:text-base"
             >
               Begin Analysis
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="5" y1="12" x2="19" y2="12"/>
-                <polyline points="12 5 19 12 12 19"/>
-              </svg>
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
             <button
               onClick={() => navigate('/about')}
-              className="flex items-center gap-2 text-slate-400 hover:text-white
-                border border-slate-700 hover:border-slate-500
-                font-medium px-6 py-3.5 rounded-xl transition-all duration-200"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 text-slate-700 hover:text-slate-900
+                bg-slate-100 hover:bg-slate-200 border border-slate-300
+                font-semibold px-6 sm:px-7 py-3.5 sm:py-4 rounded-xl transition-all duration-200 text-sm sm:text-base"
             >
               Learn More
             </button>
@@ -105,73 +121,87 @@ export default function Home() {
       </section>
 
       {/* Stats */}
-      <section className="border-y border-navy-700/50 bg-navy-900/30">
-        <div className="max-w-5xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-6">
+      <section className="border-b border-slate-200 bg-slate-100/70">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
           {stats.map((s) => (
-            <div key={s.label} className="text-center">
-              <div className="text-3xl font-black gradient-text mb-1">{s.value}</div>
-              <div className="text-xs text-slate-500 uppercase tracking-wider">{s.label}</div>
+            <div key={s.label} className="text-center bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200/60 shadow-2xs">
+              <div className="text-2xl sm:text-3xl font-black text-slate-900 mb-1 font-mono">{s.value}</div>
+              <div className="text-[10px] sm:text-xs text-slate-600 font-semibold uppercase tracking-wider">{s.label}</div>
             </div>
           ))}
         </div>
       </section>
       
       {/* Pipeline */}
-      <section className="max-w-6xl mx-auto px-6 py-20">
-        <div className="text-center mb-12">
-          <div className="text-sm text-cyan-500 font-mono uppercase tracking-widest mb-3">Processing Pipeline</div>
-          <h2 className="text-4xl font-bold text-black">How It Works</h2>
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
+        <div className="text-center mb-8 sm:mb-12">
+          <div className="text-xs text-cyan-700 font-mono font-bold uppercase tracking-widest mb-2">
+            Processing Pipeline
+          </div>
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900">How It Works</h2>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {pipeline.map((step, i) => (
-            <div key={step.step} className="relative">
-              <div className="card-glass rounded-xl p-5 text-center hover:border-cyan-500/30 transition-all duration-200 hover:glow-cyan">
-                <div className="text-4xl mb-3">{step.icon}</div>
-                <div className="text-xs text-cyan-500 font-mono mb-1.5">{step.step}</div>
-                <div className="text-sm font-bold text-black mb-1.5">{step.label}</div>
-                <div className="text-xs text-slate-400 leading-tight">{step.desc}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {pipeline.map((step, i) => {
+            const StepIcon = step.icon
+            return (
+              <div key={step.step} className="relative">
+                <div className="card-glass rounded-xl p-4 sm:p-5 text-center hover:border-cyan-400 transition-all duration-200 hover:shadow-md">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-600 flex items-center justify-center mx-auto mb-3 flex-shrink-0">
+                    <StepIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+                  </div>
+                  <div className="text-xs text-cyan-700 font-mono font-bold mb-1">{step.step}</div>
+                  <div className="text-sm font-bold text-slate-900 mb-1">{step.label}</div>
+                  <div className="text-xs text-slate-600 leading-tight">{step.desc}</div>
+                </div>
+                {i < pipeline.length - 1 && (
+                  <div className="hidden lg:flex absolute top-1/2 -right-3 -translate-y-1/2 z-10 text-cyan-600 justify-center">
+                    <ChevronRight className="w-5 h-5" />
+                  </div>
+                )}
               </div>
-              {i < pipeline.length - 1 && (
-                <div className="hidden lg:block absolute top-1/2 -right-2 z-10 text-cyan-500/30 text-base">▶</div>
-              )}
-            </div>
-          ))}
+            )
+          })}
         </div>
       </section>
 
       {/* Features */}
-      <section className="bg-navy-900/30 border-y border-navy-700/50">
-        <div className="max-w-5xl mx-auto px-6 py-20">
-          <div className="text-center mb-12">
-            <div className="text-sm text-cyan-500 font-mono uppercase tracking-widest mb-3">Capabilities</div>
-            <h2 className="text-4xl font-bold text-black">Platform Features</h2>
+      <section className="bg-slate-100/60 border-y border-slate-200">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
+          <div className="text-center mb-8 sm:mb-12">
+            <div className="text-xs text-cyan-700 font-mono font-bold uppercase tracking-widest mb-2">Capabilities</div>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900">Platform Features</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {features.map((f) => (
-              <div key={f.title} className="card-glass rounded-xl p-6 hover:border-cyan-500/30 transition-all duration-200">
-                <div className="text-4xl mb-4">{f.icon}</div>
-                <div className="font-bold text-white mb-2 text-base">{f.title}</div>
-                <div className="text-sm text-slate-400 leading-relaxed">{f.desc}</div>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {features.map((f) => {
+              const FeatureIcon = f.icon
+              return (
+                <div key={f.title} className="card-glass rounded-xl p-5 sm:p-6 hover:border-cyan-300 transition-all duration-200 hover:shadow-md">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mb-4 flex-shrink-0">
+                    <FeatureIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+                  </div>
+                  <div className="font-bold text-slate-900 mb-2 text-sm sm:text-base">{f.title}</div>
+                  <div className="text-xs sm:text-sm text-slate-600 leading-relaxed">{f.desc}</div>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>
 
       {/* Disclaimer */}
-      <section className="max-w-4xl mx-auto px-6 py-12">
-        <div className="card-glass rounded-xl p-6 border-l-4 border-amber-500">
-          <div className="flex items-start gap-4">
-            <span className="text-2xl">⚠️</span>
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 sm:p-6 border-l-4 border-l-amber-500 shadow-2xs">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600 flex-shrink-0 mt-0.5" />
             <div>
-              <div className="font-bold text-amber-400 mb-2 text-sm uppercase tracking-wider">
+              <div className="font-bold text-amber-800 mb-1.5 sm:mb-2 text-xs sm:text-sm uppercase tracking-wider">
                 Research Platform — Non-Diagnostic
               </div>
-              <p className="text-slate-400 text-xs leading-relaxed">
+              <p className="text-slate-700 text-xs leading-relaxed font-normal">
                 ThermalRiskAI is an AI-powered computational research tool. All outputs including NDVII scores,
-                organ zone assessments, perfusion levels, and health indicators are <strong className="text-black">
+                organ zone assessments, perfusion levels, and health indicators are <strong className="text-slate-900 font-bold">
                 non-diagnostic computational research indicators only</strong>. They do not constitute medical advice,
                 diagnosis, or treatment. Always consult a qualified healthcare professional for medical decisions.
                 This platform is intended for research and educational purposes only.
