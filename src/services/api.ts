@@ -115,3 +115,14 @@ export async function uploadThermalScan(file: File): Promise<any> {
   })
   return response.data
 }
+
+export async function deleteScan(scanId: string): Promise<{ status: string; message: string; scan_id?: string }> {
+  const response = await apiClient.delete<{ status: string; message: string; scan_id?: string }>(`/api/history/${scanId}`)
+  return response.data
+}
+
+export async function deleteAllHistory(): Promise<{ status: string; message: string; deleted_count?: number }> {
+  const response = await apiClient.delete<{ status: string; message: string; deleted_count?: number }>('/api/history')
+  return response.data
+}
+

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ResponsiveContainer,
@@ -29,15 +29,67 @@ import {
   KeyRound,
   UploadCloud,
   AlertTriangle,
+  Trash2,
+  Loader2,
+  CheckCircle2,
+  X,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useDigitalTwin } from '../context/DigitalTwinContext'
+import { deleteScan, deleteAllHistory } from '../services/api'
 
 /* ==================== DIGITAL TWIN PAGE COMPONENT ==================== */
 
 export default function DigitalTwin() {
   const { currentUser } = useAuth()
-  const { digitalTwinData, historyData, loading, error } = useDigitalTwin()
+  const { digitalTwinData, historyData, loading, error, refreshData } = useDigitalTwin()
+
+  // Deletion modal and feedback state management
+  const [deleteModal, setDeleteModal] = useState<{ type: 'single'; scanId: string } | { type: 'all' } | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  // Auto-dismiss success feedback message after 4 seconds
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(null), 4000)
+      return () => clearTimeout(timer)
+    }
+  }, [successMessage])
+
+  // Handle execution of scan deletion
+  const handleConfirmDelete = async () => {
+    if (!deleteModal || isDeleting) return
+    setIsDeleting(true)
+    setActionError(null)
+
+    try {
+      if (deleteModal.type === 'single') {
+        await deleteScan(deleteModal.scanId)
+        setSuccessMessage('Scan deleted.')
+      } else if (deleteModal.type === 'all') {
+        await deleteAllHistory()
+        setSuccessMessage('All scan history deleted.')
+      }
+      setDeleteModal(null)
+      await refreshData()
+    } catch (err: any) {
+      console.error('Deletion error:', err)
+      const status = err.response?.status
+      if (status === 401) {
+        setActionError('Authentication required. Please sign in again.')
+      } else if (status === 403) {
+        setActionError('You do not have permission to delete this record.')
+      } else if (status === 404) {
+        setActionError('Scan record not found.')
+      } else {
+        setActionError(err.response?.data?.detail || 'Failed to delete scan record. Please try again.')
+      }
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   // Format authenticated user dates
   const createdDate = currentUser?.metadata.creationTime
@@ -134,6 +186,7 @@ export default function DigitalTwin() {
       trend: scansProcessed > 0 ? `${scansProcessed} scans analyzed` : 'Routine tracking',
     },
   ]
+
   return (
     <div className="min-h-screen py-6 sm:py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6 sm:space-y-10 overflow-x-hidden">
 
@@ -215,6 +268,39 @@ export default function DigitalTwin() {
           </div>
         </div>
       </section>
+
+      {/* Action Success / Error Feedback Notifications */}
+      {successMessage && (
+        <div className="flex items-center justify-between gap-3 bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-xl text-xs font-medium shadow-2xs">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <span>{successMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSuccessMessage(null)}
+            className="text-emerald-600 hover:text-emerald-800 font-bold p-0.5 rounded-md hover:bg-emerald-100 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {actionError && (
+        <div className="flex items-center justify-between gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-xl text-xs font-medium shadow-2xs">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+            <span>{actionError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActionError(null)}
+            className="text-rose-600 hover:text-rose-800 font-bold p-0.5 rounded-md hover:bg-rose-100 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* API Error Notification */}
       {error && (
@@ -345,16 +431,30 @@ export default function DigitalTwin() {
 
           {/* ==================== 4. HISTORICAL SCAN TIMELINE / PREVIOUS SCANS ==================== */}
           <section className="card-glass rounded-2xl p-5 sm:p-8 border border-slate-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 sm:mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
               <div>
                 <div className="text-xs text-cyan-700 font-mono font-bold uppercase tracking-widest mb-1">
                   Longitudinal Track
                 </div>
                 <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Historical Scan Timeline</h2>
               </div>
-              <span className="text-xs font-mono font-bold text-slate-500">
-                {scansList.length} Total Records
-              </span>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-xs font-mono font-bold text-slate-500">
+                  {scansList.length} Total Records
+                </span>
+                {scansList.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setDeleteModal({ type: 'all' })}
+                    disabled={isDeleting}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors shadow-2xs disabled:opacity-50"
+                    title="Delete all scan records"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete All History</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {scansList.length === 0 ? (
@@ -417,8 +517,20 @@ export default function DigitalTwin() {
                             </div>
                           </div>
 
-                          <div className="text-[11px] sm:text-xs text-slate-600 font-mono font-semibold bg-white px-3 py-1.5 rounded-lg border border-slate-200 self-start sm:self-center shadow-2xs flex-shrink-0">
-                            {formattedDate}
+                          <div className="flex items-center gap-2.5 self-start sm:self-center flex-shrink-0">
+                            <div className="text-[11px] sm:text-xs text-slate-600 font-mono font-semibold bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-2xs">
+                              {formattedDate}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteModal({ type: 'single', scanId: scan.scanId })}
+                              disabled={isDeleting}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-600 hover:text-rose-700 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-200 transition-colors shadow-2xs disabled:opacity-50"
+                              title="Delete scan record"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Delete</span>
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -540,6 +652,67 @@ export default function DigitalTwin() {
         </>
       )}
 
+      {/* ==================== DELETE CONFIRMATION MODAL ==================== */}
+      {deleteModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-xl border border-slate-200 space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="w-10 h-10 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center text-rose-600 flex-shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <button
+                type="button"
+                onClick={() => !isDeleting && setDeleteModal(null)}
+                disabled={isDeleting}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                {deleteModal.type === 'single' ? 'Delete this scan?' : 'Delete all your scan history?'}
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                {deleteModal.type === 'single'
+                  ? 'This record will be permanently removed from your history.'
+                  : 'This will permanently remove all your saved scans.'}
+              </p>
+            </div>
+
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteModal(null)}
+                disabled={isDeleting}
+                className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition-colors shadow-md shadow-rose-600/20 disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : deleteModal.type === 'single' ? (
+                  <span>Delete</span>
+                ) : (
+                  <span>Delete All</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
+
