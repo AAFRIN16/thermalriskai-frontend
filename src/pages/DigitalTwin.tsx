@@ -38,6 +38,39 @@ import { useAuth } from '../context/AuthContext'
 import { useDigitalTwin } from '../context/DigitalTwinContext'
 import { deleteScan, deleteAllHistory } from '../services/api'
 
+/* ==================== TIMESTAMP PARSER & FORMATTER ==================== */
+
+function formatScanTimestamp(timestampStr: string): string {
+  if (!timestampStr) return 'N/A'
+
+  let isoStr = timestampStr.trim().replace(' ', 'T')
+
+  // If no timezone offset (Z or +/-HH:MM) is present, treat as UTC by appending 'Z'
+  if (!isoStr.endsWith('Z') && !/[+-]\d{2}:?\d{2}$/.test(isoStr)) {
+    isoStr += 'Z'
+  }
+
+  let date = new Date(isoStr)
+
+  // Fallback parsing if ISO construction fails
+  if (isNaN(date.getTime())) {
+    date = new Date(timestampStr)
+  }
+
+  if (isNaN(date.getTime())) {
+    return timestampStr
+  }
+
+  return date.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  })
+}
+
 /* ==================== DIGITAL TWIN PAGE COMPONENT ==================== */
 
 export default function DigitalTwin() {
@@ -481,6 +514,7 @@ export default function DigitalTwin() {
               /* HISTORICAL SCANS TIMELINE */
               <div className="space-y-4 sm:space-y-6">
                 {scansList.map((scan, idx) => {
+                  const formattedDate = formatScanTimestamp(scan.timestamp)
                   const label = scan.NDVII?.stability_label || 'Analyzed'
                   const ndviiVal = scan.NDVII?.ndvii?.toFixed(4) ?? '0.0000'
                   const score = scan.WellnessScore ?? Math.round((1 - (scan.NDVII?.ndvii ?? 0)) * 100)
@@ -510,7 +544,10 @@ export default function DigitalTwin() {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2.5 self-start sm:self-center flex-shrink-0">
+                          <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-center flex-shrink-0">
+                            <div className="text-[11px] sm:text-xs text-slate-600 font-mono font-semibold bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-2xs">
+                              {formattedDate}
+                            </div>
                             <button
                               type="button"
                               onClick={() => setDeleteModal({ type: 'single', scanId: scan.scanId })}
