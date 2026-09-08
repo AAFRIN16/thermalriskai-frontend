@@ -481,13 +481,6 @@ export default function DigitalTwin() {
               /* HISTORICAL SCANS TIMELINE */
               <div className="space-y-4 sm:space-y-6">
                 {scansList.map((scan, idx) => {
-                  const formattedDate = new Date(scan.timestamp).toLocaleString(undefined, {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
                   const label = scan.NDVII?.stability_label || 'Analyzed'
                   const ndviiVal = scan.NDVII?.ndvii?.toFixed(4) ?? '0.0000'
                   const score = scan.WellnessScore ?? Math.round((1 - (scan.NDVII?.ndvii ?? 0)) * 100)
@@ -518,9 +511,6 @@ export default function DigitalTwin() {
                           </div>
 
                           <div className="flex items-center gap-2.5 self-start sm:self-center flex-shrink-0">
-                            <div className="text-[11px] sm:text-xs text-slate-600 font-mono font-semibold bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-2xs">
-                              {formattedDate}
-                            </div>
                             <button
                               type="button"
                               onClick={() => setDeleteModal({ type: 'single', scanId: scan.scanId })}
